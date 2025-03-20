@@ -1,79 +1,136 @@
-import { View, Image, StyleSheet, Platform } from "react-native";
+import React, { useState } from "react";
+import { ScrollView, Text, TouchableOpacity, Image, View } from "react-native";
+import {
+  Input,
+  InputField,
+  InputIcon,
+  InputSlot,
+  Button,
+  ButtonText,
+  Divider,
+  VStack,
+  HStack,
+  Box,
+} from "@gluestack-ui/themed";
+import { EyeIcon, EyeOffIcon } from "@gluestack-ui/themed";
 
-import { HelloWave } from "@/components/HelloWave";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+export default function LoginScreen() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-export default function HomeScreen() {
+  const handleTogglePassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <View className="w-20 h-20 bg-blue-500"></View>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this
-          starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{" "}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View className="flex-1 bg-white">
+      <ScrollView className="flex-1 p-6">
+        <VStack space="lg" className="mt-10">
+          {/* Header */}
+
+          <Box>
+            <Text className="text-3xl font-bold text-[#1a1a1a]">
+              Chào mừng bạn quay lại!
+            </Text>
+            <Text className="text-base text-gray-500 mt-2">
+              Chào mừng bạn đã quay lại với CatCorner. Hãy đăng nhập ngay để
+              nhận nhiều ưu đãi từ CatCorner nhé!
+            </Text>
+          </Box>
+
+          {/* Form */}
+          <VStack space="md" className="mt-6 gap-3">
+            {/* Email Input */}
+            <Box>
+              <Text className="text-base mb-2 text-gray-600">Email</Text>
+              <Input
+                variant="outline"
+                size="lg"
+                className="border border-gray-300 rounded-md"
+              >
+                <InputField
+                  placeholder="example@email.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  className="py-3 ml-2"
+                />
+              </Input>
+            </Box>
+
+            {/* Password Input */}
+            <Box>
+              <Text className="text-base mb-2 text-gray-600">Mật khẩu</Text>
+              <Input
+                variant="outline"
+                size="lg"
+                className="border border-gray-300 rounded-md flex flex-row justify-between"
+              >
+                <InputField
+                  placeholder="••••••••"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChangeText={setPassword}
+                  className="py-3 flex-1 ml-2"
+                />
+                <InputSlot
+                  onPress={handleTogglePassword}
+                  className="pr-3 h-10 w-10 "
+                >
+                  <InputIcon as={showPassword ? EyeOffIcon : EyeIcon} />
+                </InputSlot>
+              </Input>
+            </Box>
+
+            {/* Login Button */}
+            <Button size="lg" className="bg-[#1d4b4b] rounded-md mt-4 py-3">
+              <ButtonText className="text-white font-medium text-center">
+                Đăng nhập
+              </ButtonText>
+            </Button>
+
+            {/* Forgot Password */}
+            <TouchableOpacity className="self-center mt-2">
+              <Text className="text-gray-500">Bạn quên mật khẩu ư?</Text>
+            </TouchableOpacity>
+          </VStack>
+
+          {/* Divider */}
+          <HStack space="sm" className="items-center my-6">
+            <Divider className="w-full bg-gray-300 h-[1px] mb-4" />
+            <Text className="text-gray-500 px-2">Hoặc đăng nhập với</Text>
+          </HStack>
+
+          {/* Social Login */}
+          <HStack space="md" className="justify-center gap-4">
+            <TouchableOpacity className="flex-1 flex-row items-center justify-center border border-gray-300 rounded-full py-3 px-4">
+              <Image
+                source={{
+                  uri: "https://cdn-icons-png.flaticon.com/512/124/124010.png",
+                }}
+                className="w-5 h-5 mr-2"
+              />
+              <Text className="text-[#1877F2] font-medium">Facebook</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity className="flex-1 flex-row items-center justify-center border border-gray-300 rounded-full py-3 px-4">
+              <Image
+                source={{
+                  uri: "https://cdn-icons-png.flaticon.com/512/2991/2991148.png",
+                }}
+                className="w-5 h-5 mr-2"
+              />
+              <Text className="text-gray-700 font-medium">Google</Text>
+            </TouchableOpacity>
+          </HStack>
+
+          {/* Non-member message */}
+          <Text className="text-center text-gray-500 mt-6">
+            Not a member? Get exclusive access to exhibitions and events, free
+            admission every day, and much more
+          </Text>
+        </VStack>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-  },
-});
