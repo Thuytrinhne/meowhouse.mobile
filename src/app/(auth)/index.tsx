@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, Image, View } from "react-native";
 import {
@@ -15,12 +16,18 @@ import {
 import { EyeIcon, EyeOffIcon } from "@gluestack-ui/themed";
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleLogin = () => {
+    // Chuyển hướng đến (tabs)/home
+    router.replace("/home");
   };
 
   return (
@@ -83,7 +90,11 @@ export default function LoginScreen() {
             </Box>
 
             {/* Login Button */}
-            <Button size="lg" className="bg-[#1d4b4b] rounded-md mt-4 py-3">
+            <Button
+              size="lg"
+              className="bg-[#1d4b4b] rounded-md mt-4 py-3"
+              onPress={handleLogin}
+            >
               <ButtonText className="text-white font-medium text-center">
                 Đăng nhập
               </ButtonText>
