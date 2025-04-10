@@ -17,6 +17,7 @@ import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -200,73 +201,80 @@ const ProductCard: React.FC<ProductCardProps> = ({
   index,
   horizontal = true,
 }) => {
+  const router = useRouter();
   const cardWidth = horizontal ? width - 80 : (width - 48) / 2;
 
   return (
-    <View
-      className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100"
-      style={{
-        width: cardWidth,
-        marginRight: horizontal ? (index === products.length - 1 ? 0 : 16) : 0,
-        marginBottom: horizontal ? 0 : 16,
-      }}
-    >
-      <View className="relative">
-        <Image
-          source={{ uri: product.image }}
-          className="w-full h-[160px]"
-          resizeMode="contain"
-        />
-        {product.discount > 0 && (
-          <View className="absolute top-2 left-2 bg-red-600 px-2 py-1 rounded">
-            <Text className="text-white text-xs font-bold">
-              -{product.discount}%
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View className="p-3">
-        <CategoryBadge category={product.category} />
-
-        <Text className="text-base font-bold my-2 h-10">{product.name}</Text>
-
-        <StarRating rating={product.rating} reviews={product.reviews} />
-
-        {product.colors && (
-          <View className="flex-row flex-wrap mt-2">
-            {product.colors.map((color, idx) => (
-              <ColorOption key={idx} label={color} />
-            ))}
-          </View>
-        )}
-
-        {product.tags && horizontal && (
-          <View className="flex-row flex-wrap mt-2">
-            {product.tags.map((tag, idx) => (
-              <TagButton key={idx} label={tag} />
-            ))}
-          </View>
-        )}
-
-        <View className="flex-row justify-between items-center mt-2">
-          {product.discount > 0 ? (
-            <>
-              <Text className="text-sm text-gray-400 line-through">
-                {product.originalPrice}
+    <TouchableOpacity onPress={() => router.push("/product-detail")}>
+      <View
+        className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100"
+        style={{
+          width: cardWidth,
+          marginRight: horizontal
+            ? index === products.length - 1
+              ? 0
+              : 16
+            : 0,
+          marginBottom: horizontal ? 0 : 16,
+        }}
+      >
+        <View className="relative">
+          <Image
+            source={{ uri: product.image }}
+            className="w-full h-[160px]"
+            resizeMode="contain"
+          />
+          {product.discount > 0 && (
+            <View className="absolute top-2 left-2 bg-red-600 px-2 py-1 rounded">
+              <Text className="text-white text-xs font-bold">
+                -{product.discount}%
               </Text>
-              <Text className="text-lg font-bold text-red-600">
-                {product.salePrice}
-              </Text>
-            </>
-          ) : (
-            <Text className="text-lg font-bold text-red-600">
-              {product.originalPrice}
-            </Text>
+            </View>
           )}
         </View>
+
+        <View className="p-3">
+          <CategoryBadge category={product.category} />
+
+          <Text className="text-base font-bold my-2 h-10">{product.name}</Text>
+
+          <StarRating rating={product.rating} reviews={product.reviews} />
+
+          {product.colors && (
+            <View className="flex-row flex-wrap mt-2">
+              {product.colors.map((color, idx) => (
+                <ColorOption key={idx} label={color} />
+              ))}
+            </View>
+          )}
+
+          {product.tags && horizontal && (
+            <View className="flex-row flex-wrap mt-2">
+              {product.tags.map((tag, idx) => (
+                <TagButton key={idx} label={tag} />
+              ))}
+            </View>
+          )}
+
+          <View className="flex-row justify-between items-center mt-2">
+            {product.discount > 0 ? (
+              <>
+                <Text className="text-sm text-gray-400 line-through">
+                  {product.originalPrice}
+                </Text>
+                <Text className="text-lg font-bold text-red-600">
+                  {product.salePrice}
+                </Text>
+              </>
+            ) : (
+              <Text className="text-lg font-bold text-red-600">
+                {product.originalPrice}
+              </Text>
+            )}
+          </View>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -312,6 +320,8 @@ const SectionTitle: React.FC<SectionTitleProps> = ({ title }) => {
 };
 
 export default function App() {
+  const router = useRouter();
+
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const flatListRef = useRef<FlatList<Product>>(null);
 
@@ -362,8 +372,18 @@ export default function App() {
             <TouchableOpacity className="bg-[#1E5245] rounded-lg p-2">
               <Ionicons name="search" size={20} color="#FFFFFF" />
             </TouchableOpacity>
+            <TouchableOpacity
+              className="ml-3"
+              onPress={() => router.push("/cart")}
+            >
+              <Ionicons name="cart-outline" size={26} color="#1E5245" />
+            </TouchableOpacity>
             <TouchableOpacity className="ml-3">
-              <Ionicons name="cart-outline" size={24} color="#1E5245" />
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                size={24}
+                color="#1E5245"
+              />
             </TouchableOpacity>
           </View>
         </View>

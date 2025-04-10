@@ -297,17 +297,6 @@ export default function ProductDetailScreen() {
               {formatPrice(406799)}
             </Text>
           </View>
-
-          <View className="flex-row mt-4">
-            <TouchableOpacity className="flex-1 mr-2 border border-[#1E5245] rounded-md py-3 items-center">
-              <Text className="text-[#1E5245] font-medium">
-                Thêm vào giỏ hàng
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity className="flex-1 ml-2 bg-[#1E5245] rounded-md py-3 items-center">
-              <Text className="text-white font-medium">Mua ngay</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Tabs */}
@@ -388,11 +377,13 @@ export default function ProductDetailScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Chat Button */}
-      <View className="absolute bottom-4 right-4">
-        <TouchableOpacity className="bg-[#1E5245] w-14 h-14 rounded-full items-center justify-center shadow-md">
-          <Ionicons name="chatbubble-ellipses" size={24} color="white" />
+      {/* Fixed bottom buttons */}
+      <View className="absolute bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 flex-row">
+        <TouchableOpacity className="flex-1 mr-2 border border-[#1E5245] rounded-md py-3 items-center">
+          <Text className="text-[#1E5245] font-medium">Thêm vào giỏ hàng</Text>
+        </TouchableOpacity>
+        <TouchableOpacity className="flex-1 ml-2 bg-[#1E5245] rounded-md py-3 items-center">
+          <Text className="text-white font-medium">Mua ngay</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

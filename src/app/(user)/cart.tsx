@@ -13,8 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-
-const { width } = Dimensions.get("window");
+import { useRouter } from "expo-router";
 
 interface CartItem {
   id: string;
@@ -29,6 +28,8 @@ interface CartItem {
 }
 
 export default function CartScreen() {
+  const router = useRouter();
+
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: "1",
@@ -103,40 +104,9 @@ export default function CartScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <StatusBar style="light" />
-
-      {/* Header */}
-      <View className="bg-[#1E5245] p-4 flex-row justify-between items-center">
-        <View className="flex-row items-center">
-          <Image
-            source={{ uri: "https://via.placeholder.com/40" }}
-            className="w-10 h-10 mr-2"
-          />
-          <Text className="text-lg font-bold text-white">CATCORNER</Text>
-        </View>
-        <TouchableOpacity>
-          <Ionicons name="menu-outline" size={28} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <View className="p-4 bg-white shadow-sm">
-        <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
-          <TextInput placeholder="Bạn tìm gì..." className="flex-1 text-sm" />
-          <TouchableOpacity className="bg-[#1E5245] rounded-lg p-2">
-            <Ionicons name="search" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-          <TouchableOpacity className="ml-3">
-            <Ionicons name="cart-outline" size={24} color="#1E5245" />
-            <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">
-              <Text className="text-[10px] text-white font-bold">
-                {cartItems.length}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
+      {/* Configure the system status bar appearance (top bar with time, battery, etc.)  */}
+      {/* 'dark' style shows dark icons and text (recommended for light backgrounds) */}
+      <StatusBar style="dark" />
       <View className="flex-1">
         {/* Quick Delete Button */}
         <View className="px-4 py-2 flex-row justify-end border-b border-gray-200">
@@ -281,7 +251,10 @@ export default function CartScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity className="bg-[#1E5245] py-3 rounded-md">
+          <TouchableOpacity
+            className="bg-[#1E5245] py-3 rounded-md"
+            onPress={() => router.push("/checkout")}
+          >
             <Text className="text-white font-bold text-center">
               Đặt hàng ({selectedItems.length})
             </Text>
@@ -294,13 +267,6 @@ export default function CartScreen() {
             CatCorner.
           </Text>
         </View>
-      </View>
-
-      {/* Chat Button */}
-      <View className="absolute bottom-4 right-4">
-        <TouchableOpacity className="bg-[#1E5245] w-14 h-14 rounded-full items-center justify-center shadow-md">
-          <Ionicons name="chatbubble-ellipses" size={24} color="white" />
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

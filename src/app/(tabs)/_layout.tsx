@@ -37,12 +37,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="cart"
+        name="product-detail"
         options={{
           title: "Cart",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="paperplane.fill" color={color} />
           ),
+          tabBarStyle: { display: "none" }, // Hide the tab bar on the Login screen
         }}
       />
     </Tabs>

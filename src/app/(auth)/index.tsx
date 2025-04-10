@@ -1,6 +1,13 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, Image, View } from "react-native";
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  Image,
+  View,
+  SafeAreaView,
+} from "react-native";
 import {
   Input,
   InputField,
@@ -31,8 +38,10 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 p-6">
+    // SafeAreaView ensures that content doesn't overlap with device-specific UI areas
+    // like the notch, status bar, or home indicator on iOS and Android.
+    <SafeAreaView className="flex-1 bg-white">
+      <ScrollView className="flex-1 px-6">
         <VStack space="lg" className="mt-10">
           {/* Header */}
 
@@ -142,6 +151,6 @@ export default function LoginScreen() {
           </Text>
         </VStack>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
