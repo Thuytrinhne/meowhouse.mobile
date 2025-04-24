@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ScrollView,
   TouchableOpacity,
@@ -14,61 +14,44 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import { useLocalSearchParams } from "expo-router";
+import { ProductDetail } from "@/types/product";
+import { fetchProductDetail } from "@/api/productApi";
+import HTML from "react-native-render-html";
 
 const { width } = Dimensions.get("window");
+type ProductDescriptionProps = {
+  product_description: string;
+};
 
-interface ProductImage {
-  id: string;
-  uri: string;
-}
+const ProductDescription: React.FC<ProductDescriptionProps> = ({
+  product_description,
+}) => {
+  // Chuyển đổi dữ liệu HTML mã hóa (có dạng unicode) thành chuỗi HTML bình thường
+  const decodedDescription = product_description
+    .replace(/\\u003C/g, "<")
+    .replace(/\\u003E/g, ">")
+    .replace(/\\n/g, "\n"); // Optional: thay đổi ký tự newline nếu cần
 
-interface ProductVariant {
-  id: string;
-  name: string;
-  image: string;
-}
+  return (
+    <ScrollView style={{ padding: 10 }}>
+      <HTML source={{ html: decodedDescription }} />
+    </ScrollView>
+  );
+};
 
 export default function ProductDetailScreen() {
+  const { id } = useLocalSearchParams();
+  console.log("ID nhận được:", id);
+
   const [activeTab, setActiveTab] = useState("info");
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
   const flatListRef = useRef<FlatList>(null);
-
-  const productImages: ProductImage[] = [
-    {
-      id: "1",
-      uri: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212421-JiTJXWwX54mIafth5fka4kcvHWJGHF.png",
-    },
-    {
-      id: "2",
-      uri: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212421-JiTJXWwX54mIafth5fka4kcvHWJGHF.png",
-    },
-    {
-      id: "3",
-      uri: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212421-JiTJXWwX54mIafth5fka4kcvHWJGHF.png",
-    },
-    {
-      id: "4",
-      uri: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212421-JiTJXWwX54mIafth5fka4kcvHWJGHF.png",
-    },
-    {
-      id: "5",
-      uri: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212421-JiTJXWwX54mIafth5fka4kcvHWJGHF.png",
-    },
-    {
-      id: "6",
-      uri: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212421-JiTJXWwX54mIafth5fka4kcvHWJGHF.png",
-    },
-  ];
-
-  const productVariants: ProductVariant[] = [
-    {
-      id: "1",
-      name: "Original",
-      image:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212437-iEFt6pzbFRL46hQAQL9D6YFCRSGO7G.png",
-    },
-  ];
 
   const incrementQuantity = () => {
     setQuantity(quantity + 1);
@@ -81,7 +64,15 @@ export default function ProductDetailScreen() {
   };
 
   const formatPrice = (price: number) => {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " đ";
+    // Làm tròn đến số nguyên
+    const roundedPrice = Math.round(price);
+
+    // Sử dụng Intl.NumberFormat với định dạng "vi-VN" nhưng bỏ phần thập phân
+    return (
+      new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(
+        roundedPrice
+      ) + " đ"
+    );
   };
 
   const handlePrevImage = () => {
@@ -91,7 +82,7 @@ export default function ProductDetailScreen() {
   };
 
   const handleNextImage = () => {
-    if (currentImageIndex < productImages.length - 1) {
+    if (product && currentImageIndex < product.product_imgs.length - 1) {
       scrollToIndex(currentImageIndex + 1);
     }
   };
@@ -103,6 +94,21 @@ export default function ProductDetailScreen() {
     });
     setCurrentImageIndex(index);
   };
+
+  const handleToggleDescription = () => {
+    setShowFullDescription((prevState) => !prevState);
+  };
+
+  useEffect(() => {
+    const loadProduct = async () => {
+      const productId = Array.isArray(id) ? id[0] : id;
+      const fetchedProduct = await fetchProductDetail(productId);
+      setProduct(fetchedProduct);
+      console.log("fetch", fetchedProduct);
+      setLoading(false);
+    };
+    loadProduct();
+  }, [id]);
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -143,7 +149,7 @@ export default function ProductDetailScreen() {
         <View className="relative">
           <FlatList
             ref={flatListRef}
-            data={productImages}
+            data={product?.product_imgs}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -157,26 +163,13 @@ export default function ProductDetailScreen() {
             renderItem={({ item }) => (
               <View style={{ width, height: 400 }}>
                 <Image
-                  source={{ uri: item.uri }}
+                  source={{ uri: item }}
                   className="w-full h-full"
                   resizeMode="contain"
                 />
                 <View className="absolute top-4 right-4 bg-black bg-opacity-70 px-2 py-1 rounded">
                   <Text className="text-white text-xs">
-                    {currentImageIndex + 1}/{productImages.length}
-                  </Text>
-                </View>
-
-                {/* Overlay text */}
-                <View className="absolute top-1/4 left-8 right-8">
-                  <Text className="text-[#C77C52] text-xl font-bold text-center mb-2">
-                    FORCAT
-                  </Text>
-                  <Text className="text-[#C77C52] text-center mb-2">
-                    Gỡ lông bằng một nút bấm
-                  </Text>
-                  <Text className="text-[#C77C52] text-center">
-                    Không làm tổn hại đến da
+                    {currentImageIndex + 1}/{product?.product_imgs.length}
                   </Text>
                 </View>
               </View>
@@ -201,9 +194,9 @@ export default function ProductDetailScreen() {
 
         {/* Thumbnails */}
         <View className="flex-row p-2 bg-white">
-          {productImages.map((image, index) => (
+          {product?.product_imgs.map((image, index) => (
             <TouchableOpacity
-              key={image.id}
+              key={index}
               className={`mr-2 border-2 ${
                 index === currentImageIndex
                   ? "border-[#1E5245]"
@@ -212,11 +205,11 @@ export default function ProductDetailScreen() {
               onPress={() => scrollToIndex(index)}
             >
               <Image
-                source={{ uri: image.uri }}
+                source={{ uri: image }}
                 className="w-14 h-14"
                 resizeMode="cover"
               />
-              {index === productImages.length - 1 && (
+              {index === product.product_imgs.length - 1 && (
                 <View className="absolute inset-0 bg-black bg-opacity-50 items-center justify-center">
                   <Text className="text-white font-bold">+2</Text>
                 </View>
@@ -228,19 +221,20 @@ export default function ProductDetailScreen() {
         {/* Product Info */}
         <View className="p-4">
           <Text className="text-2xl font-bold text-gray-800">
-            Lược chải lông mèo Pawbby
+            {product?.product_name}
           </Text>
 
           <Text className="text-gray-600 mt-1">
-            Lược chải lông mèo Pawbby được thiết kế để loại bỏ hiệu quả lông
-            rụng và lớp lông tơ khỏi mèo của bạn
+            {product?.product_short_description}
           </Text>
 
           <View className="flex-row items-center mt-2">
             {[...Array(5)].map((_, i) => (
               <Ionicons key={i} name="star" size={16} color="#FFD700" />
             ))}
-            <Text className="text-gray-500 ml-1">(492 đánh giá)</Text>
+            <Text className="text-gray-500 ml-1">
+              ( {product?.product_avg_rating.rating_count} đánh giá)
+            </Text>
           </View>
 
           <View className="mt-4">
@@ -248,18 +242,20 @@ export default function ProductDetailScreen() {
               Chọn phân loại:
             </Text>
             <View className="flex-row">
-              {productVariants.map((variant) => (
+              {product?.product_variants.map((variant) => (
                 <TouchableOpacity
-                  key={variant.id}
+                  key={variant._id}
                   className="mr-3 border-2 border-[#1E5245] rounded-md overflow-hidden"
                 >
                   <Image
-                    source={{ uri: variant.image }}
+                    source={{ uri: variant.variant_img }}
                     className="w-20 h-20"
                     resizeMode="cover"
                   />
                   <View className="bg-gray-100 p-1">
-                    <Text className="text-xs text-center">{variant.name}</Text>
+                    <Text className="text-xs text-center">
+                      {variant.variant_name}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -290,17 +286,26 @@ export default function ProductDetailScreen() {
           </View>
 
           <View className="flex-row items-center mt-4">
-            <Text className="text-gray-500 line-through mr-3">
-              {formatPrice(451999)}
-            </Text>
-            <Text className="text-xl font-bold text-[#14B8A6]">
-              {formatPrice(406799)}
-            </Text>
+            {product?.product_variants[0]?.variant_price && (
+              <Text className="text-gray-500 line-through mr-3">
+                {formatPrice(product?.product_variants[0]?.variant_price)}
+              </Text>
+            )}
+            {product?.product_variants[0]?.variant_discount_percent && (
+              <Text className="text-xl font-bold text-[#14B8A6]">
+                {formatPrice(
+                  product.product_variants[0].variant_price *
+                    (1 -
+                      product.product_variants[0].variant_discount_percent /
+                        100)
+                )}
+              </Text>
+            )}
           </View>
         </View>
 
         {/* Tabs */}
-        <View className="border-t border-gray-200 mt-4">
+        <View className="border-t border-gray-200 mt-4 mb-36">
           <View className="flex-row border-b border-gray-200">
             <TouchableOpacity
               className={`flex-1 py-3 ${
@@ -334,38 +339,23 @@ export default function ProductDetailScreen() {
 
           {activeTab === "info" && (
             <View className="p-4">
-              <Text className="font-bold text-gray-800 mb-2">
-                Tính năng sản phẩm:
-              </Text>
-              <Text className="text-gray-700 mb-1">
-                • Thiết kế lưới giúp chải sâu vào lớp lông
-              </Text>
-              <Text className="text-gray-700 mb-1">
-                • Phù hợp với nhiều giống vật nuôi và kích cỡ khác nhau
-              </Text>
-              <Text className="text-gray-700 mb-1">
-                • Các cạnh được bo tròn an toàn
-              </Text>
-              <Text className="text-gray-700 mb-1">
-                • Bàn chải giúp giảm rụng lông
-              </Text>
-              <Text className="text-gray-700 mb-1">
-                • Gỡ lông bằng một nút bấm, thích hợp cho mọi loại lông
-              </Text>
+              {product?.product_description && (
+                <ProductDescription
+                  product_description={
+                    showFullDescription
+                      ? product?.product_description
+                      : product?.product_description.slice(0, 200) + "..."
+                  }
+                />
+              )}
 
-              <Text className="font-bold text-gray-800 mt-4 mb-2">
-                Thông số kỹ thuật:
-              </Text>
-              <Text className="text-gray-700 mb-1">
-                • Chất liệu: Nhựa, thép không gỉ
-              </Text>
-              <Text className="text-gray-700 mb-1">• Màu sắc: Trắng</Text>
-              <Text className="text-gray-700 mb-1">
-                • Kích thước: 149*70*49mm
-              </Text>
-
-              <TouchableOpacity className="items-center mt-4">
-                <Text className="text-[#14B8A6]">Xem thêm ▼</Text>
+              <TouchableOpacity
+                className="items-center mt-4"
+                onPress={handleToggleDescription}
+              >
+                <Text className="text-[#14B8A6]">
+                  {showFullDescription ? "Thu gọn ▲" : "Xem thêm ▼"}
+                </Text>
               </TouchableOpacity>
             </View>
           )}

@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   ScrollView,
@@ -12,126 +11,21 @@ import {
   TextInput,
   FlatList,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import {
+  fetchNewestProducts,
+  fetchDiscountProducts,
+  fetchHotSalesProducts,
+} from "@/api/productApi";
+import { Product } from "@/types/product";
 
 const { width } = Dimensions.get("window");
-
-interface Product {
-  id: string;
-  category: string;
-  name: string;
-  image: string;
-  rating: number;
-  reviews: number;
-  originalPrice: string;
-  salePrice: string;
-  discount: number;
-  tags?: string[];
-  colors?: string[];
-  isNew?: boolean;
-  isHotSale?: boolean;
-}
-
-const products: Product[] = [
-  {
-    id: "1",
-    category: "Pate",
-    name: "Pate cho mèo Neko Jelly đủ vị - Thái Lan",
-    image:
-      "https://meowhouse-web-six.vercel.app/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2Fdmjwq3ebx%2Fimage%2Fupload%2Fv1735321851%2Fcatcorner%2Fproducts%2Fs2usitxqbwmkwqtlulyd.png&w=256&q=75",
-    rating: 5,
-    reviews: 251,
-    originalPrice: "27.999đ",
-    salePrice: "25.200đ",
-    discount: 10,
-    tags: ["Cá hồi", "Cá trắp", "Phô mai"],
-    isNew: true,
-  },
-  {
-    id: "2",
-    category: "Đồ vệ sinh",
-    name: "Lược chải lông mèo Pawbby",
-    image:
-      "https://meowhouse-web-six.vercel.app/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2Fdmjwq3ebx%2Fimage%2Fupload%2Fv1735324284%2Fcatcorner%2Fproducts%2Fcv5zp5oivv50ifyrrb5d.webp&w=256&q=75",
-    rating: 5,
-    reviews: 492,
-    originalPrice: "451.999đ",
-    salePrice: "406.800đ",
-    discount: 10,
-    isHotSale: true,
-  },
-  {
-    id: "3",
-    category: "Cỏ mèo",
-    name: "Cỏ mèo đàn tương Catnip",
-    image:
-      "https://meowhouse-web-six.vercel.app/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2Fdmjwq3ebx%2Fimage%2Fupload%2Fv1735324284%2Fcatcorner%2Fproducts%2Fcv5zp5oivv50ifyrrb5d.webp&w=256&q=75",
-    rating: 5,
-    reviews: 327,
-    originalPrice: "53.000đ",
-    salePrice: "47.700đ",
-    discount: 10,
-    isNew: true,
-  },
-  {
-    id: "4",
-    category: "Cỏ mèo",
-    name: "Cỏ bạc hà cho mèo Catnip",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20202038-OvBWpAUpKShWdSZr0j0nzWfHPl9548.png",
-    rating: 5,
-    reviews: 741,
-    originalPrice: "51.999đ",
-    salePrice: "46.199đ",
-    discount: 10,
-    isHotSale: true,
-  },
-  {
-    id: "5",
-    category: "Balo, Lồng",
-    name: "Lồng mèo nan ống 3 tầng FORCAT",
-    image:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20202038-OvBWpAUpKShWdSZr0j0nzWfHPl9548.png",
-    rating: 5,
-    reviews: 331,
-    originalPrice: "12.000đ",
-    salePrice: "10.000đ",
-    discount: 15,
-    colors: ["Trắng sữa", "Đen sữa", "Xanh sữa"],
-    isHotSale: true,
-  },
-  {
-    id: "6",
-    category: "Đồ chơi",
-    name: "Đồ chơi cần câu mèo lông vũ",
-    image:
-      "https://meowhouse-web-six.vercel.app/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2Fdmjwq3ebx%2Fimage%2Fupload%2Fv1735324284%2Fcatcorner%2Fproducts%2Fcv5zp5oivv50ifyrrb5d.webp&w=256&q=75",
-    rating: 4,
-    reviews: 127,
-    originalPrice: "35.000đ",
-    salePrice: "29.750đ",
-    discount: 15,
-    isNew: true,
-  },
-  {
-    id: "7",
-    category: "Thức ăn",
-    name: "Thức ăn hạt Me-O cho mèo trưởng thành",
-    image:
-      "https://meowhouse-web-six.vercel.app/_next/image?url=https%3A%2F%2Fres.cloudinary.com%2Fdmjwq3ebx%2Fimage%2Fupload%2Fv1735324284%2Fcatcorner%2Fproducts%2Fcv5zp5oivv50ifyrrb5d.webp&w=256&q=75",
-    rating: 5,
-    reviews: 421,
-    originalPrice: "175.000đ",
-    salePrice: "148.750đ",
-    discount: 15,
-    isNew: true,
-  },
-];
 
 interface StarRatingProps {
   rating: number;
@@ -166,11 +60,13 @@ const TagButton: React.FC<TagButtonProps> = ({ label }) => {
   );
 };
 
-interface ColorOptionProps {
+interface VariantOptionProps {
   label: string;
 }
 
-const ColorOption: React.FC<ColorOptionProps> = ({ label }) => {
+const VariantOption: React.FC<VariantOptionProps> = ({ label }) => {
+  if (label == "Original") return null;
+
   return (
     <TouchableOpacity className="px-3 py-1 rounded-full border border-teal-600 mr-2">
       <Text className="text-xs text-teal-600">{label}</Text>
@@ -205,70 +101,77 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const cardWidth = horizontal ? width - 80 : (width - 48) / 2;
 
   return (
-    <TouchableOpacity onPress={() => router.push("/product-detail")}>
+    <TouchableOpacity
+      onPress={() => {
+        console.log(product.product_id_hashed);
+        router.push({
+          pathname: "/product-detail",
+          params: {
+            id: encodeURIComponent(product.product_id_hashed),
+          },
+        });
+      }}
+    >
       <View
         className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100"
         style={{
           width: cardWidth,
-          marginRight: horizontal
-            ? index === products.length - 1
-              ? 0
-              : 16
-            : 0,
+          marginRight: horizontal ? (index === 16 ? 0 : 16) : 0,
           marginBottom: horizontal ? 0 : 16,
         }}
       >
         <View className="relative">
           <Image
-            source={{ uri: product.image }}
+            source={{ uri: product.product_img }}
             className="w-full h-[160px]"
             resizeMode="contain"
           />
-          {product.discount > 0 && (
+          {product.highest_discount > 0 && (
             <View className="absolute top-2 left-2 bg-red-600 px-2 py-1 rounded">
               <Text className="text-white text-xs font-bold">
-                -{product.discount}%
+                -{product.highest_discount}%
               </Text>
             </View>
           )}
         </View>
 
         <View className="p-3">
-          <CategoryBadge category={product.category} />
-
-          <Text className="text-base font-bold my-2 h-10">{product.name}</Text>
-
-          <StarRating rating={product.rating} reviews={product.reviews} />
-
-          {product.colors && (
+          <CategoryBadge category={product.category_name} />
+          <Text className="text-base font-bold my-2 h-10">
+            {product.product_name}
+          </Text>
+          <StarRating
+            rating={product.product_avg_rating.rating_point}
+            reviews={product.product_sold_quantity}
+          />
+          {/* product variant */}
+          {product.variant_names && (
             <View className="flex-row flex-wrap mt-2">
-              {product.colors.map((color, idx) => (
-                <ColorOption key={idx} label={color} />
+              {product.variant_names.map((name) => (
+                <VariantOption key={name} label={name} />
               ))}
             </View>
           )}
-
-          {product.tags && horizontal && (
+          {/* {product.variant_name && horizontal && (
             <View className="flex-row flex-wrap mt-2">
               {product.tags.map((tag, idx) => (
                 <TagButton key={idx} label={tag} />
               ))}
             </View>
-          )}
-
+          )} */}
           <View className="flex-row justify-between items-center mt-2">
-            {product.discount > 0 ? (
+            {product.highest_discount > 0 ? (
               <>
                 <Text className="text-sm text-gray-400 line-through">
-                  {product.originalPrice}
+                  {product.product_price}
                 </Text>
                 <Text className="text-lg font-bold text-red-600">
-                  {product.salePrice}
+                  {product.lowest_price}
                 </Text>
               </>
             ) : (
               <Text className="text-lg font-bold text-red-600">
-                {product.originalPrice}
+                {product.product_price}
               </Text>
             )}
           </View>
@@ -324,9 +227,15 @@ export default function App() {
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const flatListRef = useRef<FlatList<Product>>(null);
+  const [hotSaleProducts, sethotSaleProducts] = useState<Product[]>([]);
+  const [newProducts, setnewProducts] = useState<Product[]>([]);
+  const [todayProducts, setTodayProducts] = useState<Product[]>([]);
 
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // là sao
   const scrollToIndex = (index: number) => {
-    if (index >= 0 && index < products.length) {
+    if (index >= 0 && index < hotSaleProducts.length) {
       flatListRef.current?.scrollToIndex({
         index,
         animated: true,
@@ -343,8 +252,23 @@ export default function App() {
     scrollToIndex(currentIndex - 1);
   };
 
-  const hotSaleProducts = products.filter((product) => product.isHotSale);
-  const newProducts = products.filter((product) => product.isNew);
+  useEffect(() => {
+    const loadProducts = async () => {
+      const fetchedNewestProducts = await fetchNewestProducts();
+      const fetchedHotSalesProducts = await fetchHotSalesProducts();
+      const fetchedDiscountProducts = await fetchDiscountProducts();
+
+      setnewProducts(fetchedNewestProducts);
+      sethotSaleProducts(fetchedHotSalesProducts);
+      setTodayProducts(fetchedDiscountProducts);
+      setLoading(false);
+    };
+    loadProducts();
+  }, []);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
 
   return (
     <GluestackUIProvider config={config}>
@@ -419,11 +343,11 @@ export default function App() {
 
               <FlatList
                 ref={flatListRef}
-                data={products}
+                data={todayProducts}
                 renderItem={({ item, index }) => (
                   <ProductCard product={item} index={index} horizontal={true} />
                 )}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.product_id_hashed}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 snapToInterval={width - 64}
@@ -437,7 +361,7 @@ export default function App() {
                 }}
               />
 
-              {currentIndex < products.length - 1 && (
+              {currentIndex < newProducts.length - 1 && (
                 <CarouselNavButton direction="right" onPress={handleNext} />
               )}
             </View>
@@ -450,7 +374,7 @@ export default function App() {
             <View className="flex-row flex-wrap justify-between">
               {hotSaleProducts.map((product, index) => (
                 <ProductCard
-                  key={product.id}
+                  key={product.product_id_hashed}
                   product={product}
                   index={index}
                   horizontal={false}
@@ -466,7 +390,7 @@ export default function App() {
             <View className="flex-row flex-wrap justify-between">
               {newProducts.map((product, index) => (
                 <ProductCard
-                  key={product.id}
+                  key={product.product_id_hashed}
                   product={product}
                   index={index}
                   horizontal={false}
