@@ -14,53 +14,32 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface CartItem {
-  id: string;
+  productId: string;
   name: string;
-  image: string;
-  price: number;
-  originalPrice: number;
   quantity: number;
+  variant?: {
+    _id: string;
+    variant_name: string;
+    variant_img: string;
+    variant_price: number;
+    variant_discount_percent: number;
+  };
   selected: boolean;
-  variant?: string;
-  category: string;
 }
 
 export default function CartScreen() {
   const router = useRouter();
 
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: "1",
-      name: "Cỏ mèo đàn tương Catnip",
-      image:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20210220-mKTRv8yGQrMZUIFzOm9WdKaWoJsR4a.png",
-      price: 47700,
-      originalPrice: 53000,
-      quantity: 1,
-      selected: true,
-      variant: "Quả bạc",
-      category: "Cỏ mèo",
-    },
-    {
-      id: "2",
-      name: "Pate cho mèo Neko Jelly đủ vị - Thái Lan",
-      image:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20210220-mKTRv8yGQrMZUIFzOm9WdKaWoJsR4a.png",
-      price: 26100,
-      originalPrice: 28999,
-      quantity: 1,
-      selected: false,
-      variant: "Cá hồi",
-      category: "Pate",
-    },
-  ]);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   const toggleSelectItem = (id: string) => {
     setCartItems(
       cartItems.map((item) =>
-        item.id === id ? { ...item, selected: !item.selected } : item
+        item.productId === id ? { ...item, selected: !item.selected } : item
       )
     );
   };
@@ -68,7 +47,7 @@ export default function CartScreen() {
   const incrementQuantity = (id: string) => {
     setCartItems(
       cartItems.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+        item.productId === id ? { ...item, quantity: item.quantity + 1 } : item
       )
     );
   };
@@ -76,7 +55,7 @@ export default function CartScreen() {
   const decrementQuantity = (id: string) => {
     setCartItems(
       cartItems.map((item) =>
-        item.id === id && item.quantity > 1
+        item.productId === id && item.quantity > 1
           ? { ...item, quantity: item.quantity - 1 }
           : item
       )
@@ -84,7 +63,7 @@ export default function CartScreen() {
   };
 
   const removeItem = (id: string) => {
-    setCartItems(cartItems.filter((item) => item.id !== id));
+    setCartItems(cartItems.filter((item) => item.productId !== id));
   };
 
   const formatPrice = (price: number) => {
@@ -93,15 +72,34 @@ export default function CartScreen() {
 
   const selectedItems = cartItems.filter((item) => item.selected);
   const totalOriginalPrice = selectedItems.reduce(
-    (sum, item) => sum + item.originalPrice * item.quantity,
+    (sum, item) => sum + (item.variant?.variant_price ?? 0) * item.quantity,
     0
   );
+
   const totalPrice = selectedItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + (item.variant?.variant_price ?? 0) * item.quantity,
     0
   );
   const totalDiscount = totalOriginalPrice - totalPrice;
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        const data = await AsyncStorage.getItem("cart");
+        if (data) {
+          const parsed = JSON.parse(data);
+          const formatted = parsed.map((item: any) => ({
+            ...item,
+            selected: true, // default select all
+          }));
+          setCartItems(formatted);
+        }
+      } catch (err) {
+        console.error("❌ Failed to load cart:", err);
+      }
+    };
 
+    loadCart();
+  }, []);
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Configure the system status bar appearance (top bar with time, battery, etc.)  */}
@@ -132,16 +130,16 @@ export default function CartScreen() {
         <ScrollView className="flex-1">
           {cartItems.map((item) => (
             <View
-              key={item.id}
+              key={item.productId}
               className={`p-4 border-b border-gray-200 ${
-                item.id === "1" ? "bg-teal-50" : "bg-white"
+                item.productId === "1" ? "bg-teal-50" : "bg-white"
               }`}
             >
               <View className="flex-row">
                 {/* Checkbox */}
                 <TouchableOpacity
                   className="mr-2 mt-1"
-                  onPress={() => toggleSelectItem(item.id)}
+                  onPress={() => toggleSelectItem(item.productId)}
                 >
                   <View
                     className={`w-5 h-5 rounded border ${
@@ -159,7 +157,7 @@ export default function CartScreen() {
                 {/* Column 1: Product Image - LARGER */}
                 <View className="w-28 h-28 mr-3">
                   <Image
-                    source={{ uri: item.image }}
+                    source={{ uri: item.variant?.variant_img }}
                     className="w-full h-full rounded-md"
                     resizeMode="contain"
                   />
@@ -168,13 +166,15 @@ export default function CartScreen() {
                 {/* Column 2: Product Information */}
                 <View className="flex-1">
                   {/* Product Name */}
-                  <Text className="font-medium text-gray-800">{item.name}</Text>
+                  <Text className="font-medium text-gray-800">
+                    {item.variant?.variant_name}
+                  </Text>
 
                   {/* Category/Variant */}
                   <View className="mt-1">
                     <View className="bg-gray-200 rounded-full px-2 py-0.5 self-start">
                       <Text className="text-xs text-gray-600">
-                        {item.variant}
+                        {item.variant?.variant_name}
                       </Text>
                     </View>
                   </View>
@@ -182,10 +182,10 @@ export default function CartScreen() {
                   {/* Price */}
                   <View className="flex-row items-center mt-2">
                     <Text className="text-xs text-gray-500 line-through mr-2">
-                      {formatPrice(item.originalPrice)}
+                      {formatPrice(item.variant?.variant_price ?? 0)}
                     </Text>
                     <Text className="text-sm font-bold text-gray-800">
-                      {formatPrice(item.price)}
+                      {formatPrice(item.variant?.variant_price ?? 0)}
                     </Text>
                   </View>
 
@@ -194,7 +194,7 @@ export default function CartScreen() {
                     <View className="flex-row items-center">
                       <TouchableOpacity
                         className="w-8 h-8 bg-gray-200 rounded-md justify-center items-center"
-                        onPress={() => decrementQuantity(item.id)}
+                        onPress={() => decrementQuantity(item.productId)}
                       >
                         <Ionicons name="remove" size={18} color="#4B5563" />
                       </TouchableOpacity>
@@ -205,7 +205,7 @@ export default function CartScreen() {
                       />
                       <TouchableOpacity
                         className="w-8 h-8 bg-gray-200 rounded-md justify-center items-center"
-                        onPress={() => incrementQuantity(item.id)}
+                        onPress={() => incrementQuantity(item.productId)}
                       >
                         <Ionicons name="add" size={18} color="#4B5563" />
                       </TouchableOpacity>
@@ -213,9 +213,13 @@ export default function CartScreen() {
 
                     <View className="flex-row items-center">
                       <Text className="font-bold text-gray-800 mr-2">
-                        {formatPrice(item.price * item.quantity)}
+                        {formatPrice(
+                          item.variant?.variant_price ?? 0 * item.quantity
+                        )}
                       </Text>
-                      <TouchableOpacity onPress={() => removeItem(item.id)}>
+                      <TouchableOpacity
+                        onPress={() => removeItem(item.productId)}
+                      >
                         <Ionicons
                           name="close-circle"
                           size={20}

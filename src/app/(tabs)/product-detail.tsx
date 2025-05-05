@@ -15,9 +15,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useLocalSearchParams } from "expo-router";
-import { ProductDetail } from "@/types/product";
+import { ProductDetail, ProductVariant } from "@/types/product";
 import { fetchProductDetail } from "@/api/productApi";
 import HTML from "react-native-render-html";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 type ProductDescriptionProps = {
@@ -109,6 +110,51 @@ export default function ProductDetailScreen() {
     };
     loadProduct();
   }, [id]);
+  // Hàm thêm sản phẩm vào giỏ hàng
+  const handleAddToCart = async () => {
+    try {
+      const productId = product?._id;
+      const selectedVariant = product?.product_variants[0]; // Tùy chọn variant
+
+      const newItem = {
+        productId,
+        name: product?.product_name,
+        quantity,
+        variant: selectedVariant,
+      };
+
+      console.log("🛒 New item to add:", newItem);
+
+      const cartData = await AsyncStorage.getItem("cart");
+      let cart = cartData ? JSON.parse(cartData) : [];
+
+      console.log("📦 Current cart data:", cart);
+
+      const index = cart.findIndex(
+        (item: any) =>
+          item.productId === newItem.productId &&
+          item.variant?._id === newItem.variant?._id
+      );
+
+      console.log("🔍 Found index in cart:", index);
+
+      if (index !== -1) {
+        cart[index].quantity += quantity;
+        console.log("✏️ Updated quantity:", cart[index].quantity);
+      } else {
+        cart.push(newItem);
+        console.log("➕ Added new item to cart.");
+      }
+
+      await AsyncStorage.setItem("cart", JSON.stringify(cart));
+      console.log("✅ Cart saved:", cart);
+
+      alert("Đã thêm vào giỏ hàng!");
+    } catch (error) {
+      console.error("❌ Lỗi thêm vào giỏ hàng:", error);
+      alert("Không thể thêm vào giỏ hàng.");
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -369,7 +415,10 @@ export default function ProductDetailScreen() {
       </ScrollView>
       {/* Fixed bottom buttons */}
       <View className="absolute bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200 flex-row">
-        <TouchableOpacity className="flex-1 mr-2 border border-[#1E5245] rounded-md py-3 items-center">
+        <TouchableOpacity
+          className="flex-1 mr-2 border border-[#1E5245] rounded-md py-3 items-center"
+          onPress={handleAddToCart}
+        >
           <Text className="text-[#1E5245] font-medium">Thêm vào giỏ hàng</Text>
         </TouchableOpacity>
         <TouchableOpacity className="flex-1 ml-2 bg-[#1E5245] rounded-md py-3 items-center">
