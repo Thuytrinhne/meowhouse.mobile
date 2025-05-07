@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ScrollView,
   TouchableOpacity,
@@ -13,6 +13,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { CartItem } from "@/types/cart";
 
 const { width } = Dimensions.get("window");
 
@@ -36,28 +38,7 @@ interface DiscountVoucher {
 }
 
 export default function CheckoutScreen() {
-  const [products, setProducts] = useState<OrderProduct[]>([
-    {
-      id: "1",
-      name: "Bàn cào móng OEM, lơ rơi, cong cua siêu dễ thương !",
-      image:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212041-jdDxZpoTGGVW8F6xgMhBpU7xyZE8Hp.png",
-      price: 88200,
-      originalPrice: 97990,
-      quantity: 1,
-      classification: "Phân loại hàng Original",
-    },
-    {
-      id: "2",
-      name: "Máy sấy lông mèo Kuubia đa năng 2 trong 1",
-      image:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-26%20212041-jdDxZpoTGGVW8F6xgMhBpU7xyZE8Hp.png",
-      price: 405180,
-      originalPrice: 450190,
-      quantity: 1,
-      classification: "Phân loại hàng Original",
-    },
-  ]);
+  const [products, setProducts] = useState<CartItem[]>([]);
 
   const [address, setAddress] = useState({
     name: "Trinh",
@@ -98,13 +79,15 @@ export default function CheckoutScreen() {
 
   // Calculate order summary
   const originalPrice = products.reduce(
-    (sum, product) => sum + product.originalPrice * product.quantity,
+    (sum, product) => sum + product.variant.variant_price * product.quantity,
     0
   );
 
   const productDiscount = products.reduce(
     (sum, product) =>
-      sum + (product.originalPrice - product.price) * product.quantity,
+      sum +
+      (product.variant.variant_price - product.variant.variant_price) *
+        product.quantity,
     0
   );
 
@@ -118,6 +101,22 @@ export default function CheckoutScreen() {
     shippingFee -
     voucherDiscount -
     shippingDiscount;
+
+  useEffect(() => {
+    const loadCheckoutItems = async () => {
+      try {
+        const data = await AsyncStorage.getItem("checkoutItems");
+        if (data) {
+          const parsed = JSON.parse(data);
+          setProducts(parsed);
+        }
+      } catch (err) {
+        console.error("❌ Failed to load checkout items:", err);
+      }
+    };
+
+    loadCheckoutItems();
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -166,11 +165,11 @@ export default function CheckoutScreen() {
 
           {products.map((product) => (
             <View
-              key={product.id}
+              key={product.productId}
               className="p-4 flex-row border-b border-gray-100 bg-green-50"
             >
               <Image
-                source={{ uri: product.image }}
+                source={{ uri: product.variant.variant_img }}
                 className="w-16 h-16 rounded-md"
                 resizeMode="contain"
               />
@@ -180,16 +179,16 @@ export default function CheckoutScreen() {
                   {product.name}
                 </Text>
                 <Text className="text-xs text-gray-500 mt-1">
-                  {product.classification}
+                  {product.variant.variant_name}
                 </Text>
 
                 <View className="flex-row justify-between items-center mt-2">
                   <View>
                     <Text className="text-xs text-gray-500 line-through">
-                      {formatPrice(product.originalPrice)}
+                      {formatPrice(product.variant.variant_price)}
                     </Text>
                     <Text className="text-sm font-bold text-gray-800">
-                      {formatPrice(product.price)}
+                      {formatPrice(product.variant.variant_price)}
                     </Text>
                   </View>
 

@@ -51,6 +51,9 @@ export default function ProductDetailScreen() {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    null
+  );
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -104,18 +107,21 @@ export default function ProductDetailScreen() {
     const loadProduct = async () => {
       const productId = Array.isArray(id) ? id[0] : id;
       const fetchedProduct = await fetchProductDetail(productId);
-      setProduct(fetchedProduct);
-      console.log("fetch", fetchedProduct);
-      setLoading(false);
+      if (fetchedProduct && fetchedProduct.product_variants?.length > 0) {
+        setProduct(fetchedProduct);
+        setSelectedVariant(fetchedProduct.product_variants[0]);
+        setLoading(false);
+      } else {
+        console.error("Product or variants not found");
+        setLoading(false);
+      }
     };
     loadProduct();
   }, [id]);
   // Hàm thêm sản phẩm vào giỏ hàng
   const handleAddToCart = async () => {
     try {
-      const productId = product?._id;
-      const selectedVariant = product?.product_variants[0]; // Tùy chọn variant
-
+      const productId = selectedVariant?._id;
       const newItem = {
         productId,
         name: product?.product_name,
@@ -199,7 +205,7 @@ export default function ProductDetailScreen() {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => index.toString()}
             onMomentumScrollEnd={(event) => {
               const newIndex = Math.round(
                 event.nativeEvent.contentOffset.x / width
@@ -292,6 +298,7 @@ export default function ProductDetailScreen() {
                 <TouchableOpacity
                   key={variant._id}
                   className="mr-3 border-2 border-[#1E5245] rounded-md overflow-hidden"
+                  onPress={() => setSelectedVariant(variant)}
                 >
                   <Image
                     source={{ uri: variant.variant_img }}

@@ -8,7 +8,6 @@ import {
   View,
   Text,
   TextInput,
-  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,20 +15,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-interface CartItem {
-  productId: string;
-  name: string;
-  quantity: number;
-  variant?: {
-    _id: string;
-    variant_name: string;
-    variant_img: string;
-    variant_price: number;
-    variant_discount_percent: number;
-  };
-  selected: boolean;
-}
+import { CartItem } from "@/types/cart";
 
 export default function CartScreen() {
   const router = useRouter();
@@ -100,6 +86,27 @@ export default function CartScreen() {
 
     loadCart();
   }, []);
+  const handleCheckout = async () => {
+    try {
+      await AsyncStorage.setItem(
+        "checkoutItems",
+        JSON.stringify(selectedItems)
+      );
+      router.push("/checkout");
+    } catch (err) {
+      console.error("❌ Failed to store checkout items:", err);
+    }
+  };
+  const handleQuickDelete = async () => {
+    try {
+      const updatedCart = cartItems.filter((item) => !item.selected);
+      setCartItems(updatedCart);
+      await AsyncStorage.setItem("cart", JSON.stringify(updatedCart));
+    } catch (err) {
+      console.error("❌ Failed to delete selected items:", err);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Configure the system status bar appearance (top bar with time, battery, etc.)  */}
@@ -108,7 +115,10 @@ export default function CartScreen() {
       <View className="flex-1">
         {/* Quick Delete Button */}
         <View className="px-4 py-2 flex-row justify-end border-b border-gray-200">
-          <TouchableOpacity className="bg-red-500 px-4 py-2 rounded-md flex-row items-center">
+          <TouchableOpacity
+            className="bg-red-500 px-4 py-2 rounded-md flex-row items-center"
+            onPress={handleQuickDelete}
+          >
             <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
             <Text className="text-white font-medium ml-1">Xóa nhanh</Text>
           </TouchableOpacity>
@@ -166,9 +176,7 @@ export default function CartScreen() {
                 {/* Column 2: Product Information */}
                 <View className="flex-1">
                   {/* Product Name */}
-                  <Text className="font-medium text-gray-800">
-                    {item.variant?.variant_name}
-                  </Text>
+                  <Text className="font-medium text-gray-800">{item.name}</Text>
 
                   {/* Category/Variant */}
                   <View className="mt-1">
@@ -257,7 +265,7 @@ export default function CartScreen() {
 
           <TouchableOpacity
             className="bg-[#1E5245] py-3 rounded-md"
-            onPress={() => router.push("/checkout")}
+            onPress={handleCheckout}
           >
             <Text className="text-white font-bold text-center">
               Đặt hàng ({selectedItems.length})
