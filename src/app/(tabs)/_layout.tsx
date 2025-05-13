@@ -37,9 +37,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="product-detail"
+        name="me"
         options={{
-          title: "Cart",
+          title: "Tôi",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="paperplane.fill" color={color} />
           ),

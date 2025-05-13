@@ -92,7 +92,10 @@ export default function CartScreen() {
         "checkoutItems",
         JSON.stringify(selectedItems)
       );
-      router.push("/checkout");
+      router.push({
+        pathname: "/checkout",
+        params: { from_cart: "true" },
+      });
     } catch (err) {
       console.error("❌ Failed to store checkout items:", err);
     }

@@ -24,6 +24,7 @@ import {
   fetchHotSalesProducts,
 } from "@/api/productApi";
 import { Product } from "@/types/product";
+import { useAuthStorage } from "@/hooks/useAuthStorage";
 
 const { width } = Dimensions.get("window");
 
@@ -230,10 +231,6 @@ export default function App() {
   const [hotSaleProducts, sethotSaleProducts] = useState<Product[]>([]);
   const [newProducts, setnewProducts] = useState<Product[]>([]);
   const [todayProducts, setTodayProducts] = useState<Product[]>([]);
-
-  const [loading, setLoading] = useState<boolean>(true);
-
-  // là sao
   const scrollToIndex = (index: number) => {
     if (index >= 0 && index < hotSaleProducts.length) {
       flatListRef.current?.scrollToIndex({
@@ -261,10 +258,10 @@ export default function App() {
       setnewProducts(fetchedNewestProducts);
       sethotSaleProducts(fetchedHotSalesProducts);
       setTodayProducts(fetchedDiscountProducts);
-      setLoading(false);
     };
     loadProducts();
   }, []);
+  const { user, token, loading } = useAuthStorage();
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;

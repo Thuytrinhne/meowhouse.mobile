@@ -15,6 +15,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CartItem } from "@/types/cart";
+import { Address } from "@/types/address";
+import { ICoupon } from "@/types/coupon";
+import { SHIPPING_COST } from "@/utils/variables";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -36,9 +40,38 @@ interface DiscountVoucher {
   discount: string;
   maxAmount: string;
 }
+type CouponType = "Free Ship" | "Order";
 
 export default function CheckoutScreen() {
+  const router = useRouter();
+
+  const { from_cart } = useLocalSearchParams();
+  const fromCart = from_cart === "true";
+
   const [products, setProducts] = useState<CartItem[]>([]);
+
+  const [cities, setCities] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [wards, setWards] = useState<any[]>([]);
+  const [selectedCity, setSelectedCity] = useState<string>("");
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+  const [selectedWard, setSelectedWard] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
+  const [userPhone, setUserPhone] = useState<string>("");
+  const [streetAddress, setStreetAddress] = useState<string>("");
+  const [orderNote, setOrderNote] = useState<string>("");
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [defaultAddress, setDefaultAddresses] = useState<Address>();
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [coupons, setCoupon] = useState<ICoupon[]>([]);
+
+  const shippingFee = SHIPPING_COST; // Fixed shipping fee
+  const [selectedCoupons, setSelectedCoupons] = useState<
+    Record<CouponType, ICoupon | null>
+  >({
+    "Free Ship": null,
+    Order: null,
+  });
 
   const [address, setAddress] = useState({
     name: "Trinh",
@@ -47,8 +80,6 @@ export default function CheckoutScreen() {
       "Thành phố Hải Phòng, Quận Lê Chân, Phường Lam Sơn, nhà tư nnnnnnnkkjk",
     isDefault: true,
   });
-
-  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   const [discountVouchers, setDiscountVouchers] = useState<DiscountVoucher[]>([
     {
@@ -91,7 +122,6 @@ export default function CheckoutScreen() {
     0
   );
 
-  const shippingFee = 30000;
   const voucherDiscount = 0;
   const shippingDiscount = 0;
 
@@ -117,6 +147,91 @@ export default function CheckoutScreen() {
 
     loadCheckoutItems();
   }, []);
+  const handleOrder = async (): Promise<void> => {
+    // if (!validateInputs()) return; // Validate user inputs
+
+    try {
+      // if (!productInfo || productInfo.length === 0) {
+      //   alert("Không có sản phẩm nào để đặt hàng!");
+      //   return;
+      // }
+
+      // Generate a unique order ID
+      // const orderId = `DH${Date.now()}${
+      //   session
+      //     ? `.${session.user.id}`
+      //     : `.guest${userPhone}_${Math.round(Math.random() * 1000)}`
+      // }`;
+
+      const orderId = `DH${Date.now()}${`.guest${userPhone}_${Math.round(
+        Math.random() * 1000
+      )}`}`;
+
+      // Prepare order products data
+      const orderProducts = products.map((product: any) => ({
+        product_hashed_id: product.product_hashed_id,
+        variant_id: product.product_variant._id,
+        quantity: product.quantity,
+        unit_price: product.product_variant.variant_price,
+        discount_percent: product.product_variant.variant_discount_percent,
+      }));
+
+      // Define payment data structure
+      const newPaymentData = {
+        order_id: orderId,
+        // user_id: session ? session.user.id : undefined,
+        order_products: orderProducts,
+        order_buyer: {
+          name: userName,
+          phone_number: userPhone,
+          address: {
+            province: selectedCity,
+            district: selectedDistrict,
+            ward: selectedWard,
+            street: streetAddress,
+          },
+        },
+        order_note: orderNote || "",
+        shipping_cost: shippingFee,
+        payment_method: paymentMethod,
+        cancel_url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/order-history?selectedTab=unpaid`, // Cancel URL
+        return_url: `${
+          process.env.NEXT_PUBLIC_FRONTEND_URL
+        }/order-success?orderId=${encodeURIComponent(orderId)}`, // Success redirect
+        from_cart: fromCart,
+        // applied_coupons: Object.values(selectedCoupons)
+        //   .filter(Boolean)
+        //   .map((coupon) => coupon.coupon_hashed_id),
+      };
+      // console.log("dataaaaaaaaa neeeeee", newPaymentData);
+      if (paymentMethod === "cod") {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/payos/create-payment-link`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...newPaymentData, mobile: false }),
+          }
+        );
+        console.log("ressponse", response);
+        if (response.ok) {
+          // router.push({
+          //   pathname: "/order-success",
+          //   params: { orderId: newPaymentData.order_id },
+          // });
+          console.log("order success", response.formData);
+          return;
+        }
+      }
+      // Save payment data to local storage
+      localStorage.setItem("paymentData", JSON.stringify(newPaymentData));
+      // // Redirect to the payment page
+      // router.push("/payment");
+    } catch (error) {
+      console.error("Error processing the order:", error);
+      alert("Đã xảy ra lỗi, vui lòng thử lại.");
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">

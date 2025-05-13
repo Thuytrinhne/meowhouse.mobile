@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   Text,
@@ -21,6 +21,8 @@ import {
   Box,
 } from "@gluestack-ui/themed";
 import { EyeIcon, EyeOffIcon } from "@gluestack-ui/themed";
+import { loginUser } from "@/api/authApi";
+import { useAuthStorage } from "@/hooks/useAuthStorage";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -32,10 +34,23 @@ export default function LoginScreen() {
     setShowPassword(!showPassword);
   };
 
-  const handleLogin = () => {
-    // Chuyển hướng đến (tabs)/home
-    router.replace("/home");
+  const handleLogin = async () => {
+    try {
+      const data = await loginUser(email, password);
+      console.log("Login Success:", data);
+      router.replace("/home");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      alert(error.message || "Đã có lỗi xảy ra, vui lòng thử lại sau");
+    }
   };
+  const { token, loading } = useAuthStorage();
+
+  useEffect(() => {
+    if (!loading && token) {
+      router.replace({ pathname: "/home" });
+    }
+  }, [loading, token]);
 
   return (
     // SafeAreaView ensures that content doesn't overlap with device-specific UI areas
