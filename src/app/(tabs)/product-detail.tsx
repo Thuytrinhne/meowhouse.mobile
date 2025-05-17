@@ -126,6 +126,7 @@ export default function ProductDetailScreen() {
         productId,
         name: product?.product_name,
         quantity,
+        product_id_hashed: product?.product_id_hashed,
         variant: selectedVariant,
       };
 

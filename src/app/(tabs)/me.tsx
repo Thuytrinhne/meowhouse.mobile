@@ -17,10 +17,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuthStorage } from "@/hooks/useAuthStorage";
+import { logoutUser } from "@/api/authApi";
 
 export default function MePage() {
   const { user, token, loading } = useAuthStorage();
   const router = useRouter();
+  const handleLogout = async () => {
+    await logoutUser();
+    router.replace("/home");
+  };
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -97,12 +102,10 @@ export default function MePage() {
 
             {/* Logout Button */}
             <TouchableOpacity
-              onPress={() => {
-                // Handle logout logic
-              }}
+              onPress={handleLogout}
               className="mt-6 bg-red-600 py-3 px-4 rounded-full items-center justify-center"
             >
-              <Text className="text-white text-lg font-bold">Log Out</Text>
+              <Text className="text-white text-lg font-bold">Đăng xuất</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

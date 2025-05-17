@@ -29,3 +29,12 @@ export const loginUser = async (email: string, password: string) => {
     throw error;
   }
 };
+
+export const logoutUser = async () => {
+  try {
+    await AsyncStorage.multiRemove(["token", "refreshToken", "user"]);
+  } catch (error) {
+    console.error("Lỗi khi đăng xuất:", error);
+    throw error;
+  }
+};

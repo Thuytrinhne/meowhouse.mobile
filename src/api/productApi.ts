@@ -62,9 +62,10 @@ export const fetchProductDetail = async (
       throw new Error("Failed to fetch data");
     }
     const data = await response.json();
-    console.log(data);
 
     // Đảm bảo bạn đang lấy đúng trường từ API trả về
+    console.log("product-detail", data.data.product);
+
     return data.data.product; // Kiểm tra đúng trường "product"
   } catch (error) {
     console.error("Error fetching product detail:", error);

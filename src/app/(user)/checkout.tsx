@@ -19,6 +19,7 @@ import { Address } from "@/types/address";
 import { ICoupon } from "@/types/coupon";
 import { SHIPPING_COST } from "@/utils/variables";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { createCodPayment } from "@/api/orderApi";
 
 const { width } = Dimensions.get("window");
 
@@ -139,6 +140,7 @@ export default function CheckoutScreen() {
         if (data) {
           const parsed = JSON.parse(data);
           setProducts(parsed);
+          console.log(parsed);
         }
       } catch (err) {
         console.error("❌ Failed to load checkout items:", err);
@@ -169,16 +171,17 @@ export default function CheckoutScreen() {
 
       // Prepare order products data
       const orderProducts = products.map((product: any) => ({
-        product_hashed_id: product.product_hashed_id,
-        variant_id: product.product_variant._id,
+        product_hashed_id: product.product_id_hashed,
+        variant_id: product.variant._id,
         quantity: product.quantity,
-        unit_price: product.product_variant.variant_price,
-        discount_percent: product.product_variant.variant_discount_percent,
+        unit_price: product.variant.variant_price,
+        discount_percent: product.variant.variant_discount_percent,
       }));
 
       // Define payment data structure
       const newPaymentData = {
         order_id: orderId,
+        user_id: undefined,
         // user_id: session ? session.user.id : undefined,
         order_products: orderProducts,
         order_buyer: {
@@ -205,26 +208,34 @@ export default function CheckoutScreen() {
       };
       // console.log("dataaaaaaaaa neeeeee", newPaymentData);
       if (paymentMethod === "cod") {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/payos/create-payment-link`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...newPaymentData, mobile: false }),
+        const isSuccess = await createCodPayment(newPaymentData);
+        if (isSuccess) {
+          // Đồng bộ giỏ hàng
+          const cartData = await AsyncStorage.getItem("cart");
+          const checkoutData = await AsyncStorage.getItem("checkoutItems");
+          if (cartData && checkoutData) {
+            const cart = JSON.parse(cartData);
+            const checkoutItems = JSON.parse(checkoutData);
+            const paidProductIds = checkoutItems.map(
+              (item: any) => item.productId
+            );
+
+            const updatedCart = cart.filter(
+              (item: any) => !paidProductIds.includes(item.productId)
+            );
+
+            await AsyncStorage.setItem("cart", JSON.stringify(updatedCart));
           }
-        );
-        console.log("ressponse", response);
-        if (response.ok) {
-          // router.push({
-          //   pathname: "/order-success",
-          //   params: { orderId: newPaymentData.order_id },
-          // });
-          console.log("order success", response.formData);
-          return;
+          await AsyncStorage.removeItem("checkoutItems");
+
+          alert("Đặt hàng thành công!");
+          router.push("/home");
+        } else {
+          alert("Tạo đơn hàng COD thất bại. Vui lòng thử lại.");
         }
       }
       // Save payment data to local storage
-      localStorage.setItem("paymentData", JSON.stringify(newPaymentData));
+      // localStorage.setItem("paymentData", JSON.stringify(newPaymentData));
       // // Redirect to the payment page
       // router.push("/payment");
     } catch (error) {
@@ -517,7 +528,10 @@ export default function CheckoutScreen() {
 
         {/* Place Order Button */}
         <View className="px-4 mb-6">
-          <TouchableOpacity className="bg-[#1E5245] py-3 rounded-md">
+          <TouchableOpacity
+            className="bg-[#1E5245] py-3 rounded-md"
+            onPress={handleOrder}
+          >
             <Text className="text-white font-bold text-center">Đặt hàng</Text>
           </TouchableOpacity>
 

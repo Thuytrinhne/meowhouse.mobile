@@ -2,8 +2,9 @@ export const createCodPayment = async (
   newPaymentData: any
 ): Promise<boolean> => {
   try {
+    console.log(newPaymentData);
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/payos/create-payment-link`,
+      `http://192.168.1.167:8080/api/payos/create-payment-link`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
